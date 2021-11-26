@@ -8,7 +8,7 @@ import requests
 from napari_plugin_engine import napari_hook_implementation
 from napari.types import LayerDataTuple
 from magicgui import magicgui, widgets
-from olf_control.labthings.utilities import json_to_ndarray
+from olf_control.things.utilities import json_to_ndarray
 
 
 class WebcamControler(widgets.Container):
@@ -20,22 +20,21 @@ class WebcamControler(widgets.Container):
         super().__init__()
         self.viewer = napari_viewer
         self.labthing_url = "http://localhost:7485"
-        self.append(self.set_resolution)
-        self.append(self.set_image)
+        self.extend([self.get_image, self.set_resolution])
 
     @magicgui
     def set_resolution(self, width: int = 640, height: int = 480):
         requests.post(
-            "{self.labthing_url}/resolution", args={"resolution": [width, height]}
+            f"{self.labthing_url}/resolution", data={"resolution": [width, height]}
         )
 
     @magicgui
     def get_image(self, n_averages: int = 3) -> LayerDataTuple:
         requests.post(
-            "{self.labthing_url}/actions/average", args={"averages": n_averages}
+            f"{self.labthing_url}/actions/average", data={"averages": n_averages}
         )
         while True:
-            response = requests.get("{self.labthing_url}/actions/average").json()[0]
+            response = requests.get(f"{self.labthing_url}/actions/average").json()[0]
             completed = response["status"] == "completed"
             if completed:
                 data = json_to_ndarray(json.loads(response["output"]))
