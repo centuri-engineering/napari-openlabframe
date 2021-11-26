@@ -3,12 +3,17 @@ Simple webcam controler from a labthing webcam server
 """
 import json
 import time
+from typing import Tuple
+
 import requests
+
 
 from napari_plugin_engine import napari_hook_implementation
 from napari.types import LayerDataTuple
 from magicgui import magicgui, widgets
 from olf_control.things.utilities import json_to_ndarray
+
+THING_URL = "http://localhost:7485"
 
 
 class WebcamControler(widgets.Container):
@@ -19,28 +24,33 @@ class WebcamControler(widgets.Container):
     def __init__(self, napari_viewer):
         super().__init__()
         self.viewer = napari_viewer
-        self.labthing_url = "http://localhost:7485"
-        self.extend([self.get_image, self.set_resolution])
+        self.extend([get_image, set_resolution])
 
-    @magicgui
-    def set_resolution(self, width: int = 640, height: int = 480):
-        requests.post(
-            f"{self.labthing_url}/resolution", data={"resolution": [width, height]}
-        )
 
-    @magicgui
-    def get_image(self, n_averages: int = 3) -> LayerDataTuple:
-        requests.post(
-            f"{self.labthing_url}/actions/average", data={"averages": n_averages}
-        )
-        while True:
-            response = requests.get(f"{self.labthing_url}/actions/average").json()[0]
-            completed = response["status"] == "completed"
-            if completed:
-                data = json_to_ndarray(json.loads(response["output"]))
-                break
+@magicgui(auto_call=True)
+def set_resolution(width: int = 640, height: int = 480) -> Tuple[int, ...]:
+    requests.put(f"{THING_URL}/resolution", json={"width": width})
+    return [width, height]
+
+
+@magicgui
+def get_image(n_averages: int = 3) -> LayerDataTuple:
+    requests.post(f"{THING_URL}/actions/average", json={"averages": n_averages})
+    while True:
+
+        # wait for response
+        responses = requests.get(f"{THING_URL}/actions/average").json()
+        if not responses:
             time.sleep(0.01)
-        return (data, {"name": "webcam image"}, "Image")
+            continue
+
+        response = responses[-1]
+        completed = response["status"] == "completed"
+        if completed:
+            data = json_to_ndarray(json.loads(response["output"]))
+            break
+        time.sleep(0.01)
+    return (data, {"name": "webcam image"}, "Image")
 
 
 @napari_hook_implementation
