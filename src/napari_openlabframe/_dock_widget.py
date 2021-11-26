@@ -1,17 +1,17 @@
 """
-This module is an example of a barebones QWidget plugin for napari
-
-It implements the ``napari_experimental_provide_dock_widget`` hook specification.
-see: https://napari.org/docs/dev/plugins/hook_specifications.html
-
-Replace code below according to your needs.
+Simple webcam controler from a labthing webcam server
 """
+import json
+import time
+import requests
+
 from napari_plugin_engine import napari_hook_implementation
-from qtpy.QtWidgets import QWidget, QHBoxLayout, QPushButton
-from magicgui import magic_factory
+from napari.types import LayerDataTuple
+from magicgui import magicgui, widgets
+from olf_control.labthings.utilities import json_to_ndarray
 
 
-class ExampleQWidget(QWidget):
+class WebcamControler(widgets.Container):
     # your QWidget.__init__ can optionally request the napari viewer instance
     # in one of two ways:
     # 1. use a parameter called `napari_viewer`, as done here
@@ -19,23 +19,32 @@ class ExampleQWidget(QWidget):
     def __init__(self, napari_viewer):
         super().__init__()
         self.viewer = napari_viewer
+        self.labthing_url = "http://localhost:7485"
+        self.append(self.set_resolution)
+        self.append(self.set_image)
 
-        btn = QPushButton("Click me!")
-        btn.clicked.connect(self._on_click)
+    @magicgui
+    def set_resolution(self, width: int = 640, height: int = 480):
+        requests.post(
+            "{self.labthing_url}/resolution", args={"resolution": [width, height]}
+        )
 
-        self.setLayout(QHBoxLayout())
-        self.layout().addWidget(btn)
-
-    def _on_click(self):
-        print("napari has", len(self.viewer.layers), "layers")
-
-
-@magic_factory
-def example_magic_widget(img_layer: "napari.layers.Image"):
-    print(f"you have selected {img_layer}")
+    @magicgui
+    def get_image(self, n_averages: int = 3) -> LayerDataTuple:
+        requests.post(
+            "{self.labthing_url}/actions/average", args={"averages": n_averages}
+        )
+        while True:
+            response = requests.get("{self.labthing_url}/actions/average").json()[0]
+            completed = response["status"] == "completed"
+            if completed:
+                data = json_to_ndarray(json.loads(response["output"]))
+                break
+            time.sleep(0.01)
+        return (data, {"name": "webcam image"}, "Image")
 
 
 @napari_hook_implementation
 def napari_experimental_provide_dock_widget():
     # you can return either a single widget, or a sequence of widgets
-    return [ExampleQWidget, example_magic_widget]
+    return WebcamControler
