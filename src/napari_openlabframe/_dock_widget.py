@@ -8,11 +8,11 @@ from typing import Tuple
 
 import requests
 
-
 from napari_plugin_engine import napari_hook_implementation
 from napari.types import LayerDataTuple
 from magicgui import magicgui, widgets
-from olf_control.things.utilities import json_to_ndarray
+
+from olf_control.utilities import json_to_ndarray
 
 THING_URL = "http://localhost:7485"
 log = logging.getLogger(__name__)
