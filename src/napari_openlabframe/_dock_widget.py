@@ -2,6 +2,7 @@
 Simple webcam controler from a labthing webcam server
 """
 import json
+import logging
 import time
 from typing import Tuple
 
@@ -14,6 +15,8 @@ from magicgui import magicgui, widgets
 from olf_control.things.utilities import json_to_ndarray
 
 THING_URL = "http://localhost:7485"
+log = logging.getLogger(__name__)
+log.addHandler(logging.StreamHandler())
 
 
 class WebcamControler(widgets.Container):
@@ -29,7 +32,10 @@ class WebcamControler(widgets.Container):
 
 @magicgui(auto_call=True)
 def set_resolution(width: int = 640, height: int = 480) -> Tuple[int, ...]:
-    requests.put(f"{THING_URL}/resolution", json={"width": width})
+
+    req = requests.put(f"{THING_URL}/resolution", json=[width, height])
+    log.info(req.status_code)
+    log.debug(req.json())
     return [width, height]
 
 
