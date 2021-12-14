@@ -1,7 +1,6 @@
 import logging
 
 import requests
-from napari.types import LayerDataTuple
 from magicgui import magicgui, widgets
 from typing_extensions import Annotated
 
