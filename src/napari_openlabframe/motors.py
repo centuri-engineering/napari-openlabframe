@@ -24,14 +24,11 @@ def set_position(x: Pos = 0.0, y: Pos = 0.0):
 class Stepper(widgets.Container):
     def __init__(self):
         super().__init__(layout="vertical")
-        print("Created stepper")
-
         left_btn = widgets.PushButton(name="Left", label="◀")
         left_btn.changed.connect(self.move_left)
-        print("added left button")
-
         right_btn = widgets.PushButton(name="Right", label="▶")
         right_btn.changed.connect(self.move_right)
+
         leftright = widgets.Container(
             layout="horizontal", widgets=[left_btn, right_btn]
         )
@@ -41,29 +38,31 @@ class Stepper(widgets.Container):
 
         down_btn = widgets.PushButton(name="Down", label="▼")
         down_btn.changed.connect(self.move_down)
+
         self.extend([up_btn, leftright, down_btn])
+        self.step = 1.0
 
     def move_left(self, btn: int):
         print("Called move_left")
         req = requests.post(
-            f"{THING_URL}/actions/step", json={"axis": "X", "step": -1.0}
+            f"{THING_URL}/actions/step", json={"axis": "X", "step": -self.step}
         )
         log.info("steppin got reply %s", req.status_code)
 
     def move_right(self, btn: int):
         req = requests.post(
-            f"{THING_URL}/actions/step", json={"axis": "X", "step": 1.0}
+            f"{THING_URL}/actions/step", json={"axis": "X", "step": self.step}
         )
         log.info("steppin got reply %s", req.status_code)
 
     def move_up(self, btn: int):
         req = requests.post(
-            f"{THING_URL}/actions/step", json={"axis": "Y", "step": 1.0}
+            f"{THING_URL}/actions/step", json={"axis": "Y", "step": self.step}
         )
         log.info("steppin got reply %s", req.status_code)
 
     def move_down(self, btn: int):
         req = requests.post(
-            f"{THING_URL}/actions/step", json={"axis": "Y", "step": -1.0}
+            f"{THING_URL}/actions/step", json={"axis": "Y", "step": -self.step}
         )
         log.info("steppin got reply %s", req.status_code)
