@@ -6,7 +6,7 @@ import logging
 from magicgui import widgets
 from napari_plugin_engine import napari_hook_implementation
 
-from olf_control.utilities import json_to_ndarray
+from .utilities import json_to_ndarray
 from .usb_camera import get_image, set_resolution
 from .motors import set_position, Stepper
 

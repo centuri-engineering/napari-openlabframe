@@ -9,7 +9,7 @@ from napari_plugin_engine import napari_hook_implementation
 from napari.types import LayerDataTuple
 from magicgui import magicgui, widgets
 
-from olf_control.utilities import json_to_ndarray
+from .utilities import json_to_ndarray
 from .conf import THING_URL
 
 log = logging.getLogger(__name__)
@@ -18,8 +18,7 @@ log.addHandler(logging.StreamHandler())
 
 @magicgui(auto_call=True)
 def set_resolution(width: int = 640, height: int = 480) -> Tuple[int, ...]:
-    """Defines the resolution of the acquired image
-    """
+    """Defines the resolution of the acquired image"""
     req = requests.put(f"{THING_URL}/resolution", json=[width, height])
     log.info("setting resolution got reply %s", req.status_code)
     log.debug(req.json())
